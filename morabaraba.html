@@ -1,0 +1,246 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8 />
+    <title>Morabaraba</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+  
+    <p id="onboardmovement">&nbsp;</p>
+    <canvas id="DemoCanvas" width="650px" height="500px" onmousemove="showCoords(event)" onmouseout="clearCoor()">
+    </canvas>
+    
+
+    <script>    
+        let positions = [           
+                        [20, 255,'new'],  //MiddleLeft join;
+                        [180, 255,'new'], //MiddleLeft join
+                        [450, 255,'new'], //MiddleRight join
+                        [620, 255,'new'], //MiddleRight join
+                        [315, 20,'new'],  //TopCenter join
+                        [315, 180,'new'], //TopCenter join
+                        [315, 330,'new'], //BottomCenter join
+                        [315, 470,'new'], //BottomCenter join
+                        [20, 20,'new'],   //NorthWest join
+                        [180, 180,'new'], //NorthWest join
+                        [20, 470,'new'],  //SouthWest join
+                        [180, 330,'new'], //SouthWest join
+                        [620, 470,'new'], //SouthEast join
+                        [450, 330,'new'], //SouthEast join  
+                        [620,20,'new'],   //NorthEast join
+                        [450, 180,'new']  //NorthEast join
+                    ];
+
+            
+        var canvas = document.getElementById('DemoCanvas');
+        var ctx = canvas.getContext('2d');
+
+        function showCoords(event) {
+            var x = event.clientX;
+            var y = event.clientY;
+            var coor = "X coords: " + x + ", Y coords: " + y;
+            document.getElementById("onboardmovement").innerHTML = coor;
+        }
+
+        function clearCoor() {
+            document.getElementById("onboardmovement").innerHTML = "&nbsp;";
+        }
+
+         var Board = {
+                        animationFrame: 0,
+                        placevalues : JSON.parse(JSON.stringify(positions)),
+                        animatePieceFromIndex: 99,
+                        animatePieceToIndex: 99,
+                        score: {
+                        player1: 0,
+                        player2: 0
+                        },
+                        playerTurn: 1,
+                        initialize: function () {
+                            this.drawBoard();
+                            this.drawPositions(true);
+
+                        },
+                        
+                        drawBoard: function()
+                        {
+                            ctx.beginPath();
+                            ctx.lineWidth = 10;
+                            ctx.lineJoin = "miter";
+
+                            //draw boxes
+                            ctx.rect(20, 20, 600, 450); //OuterBox
+                            ctx.rect(100, 100, 435, 300); //MiddleBox
+                            ctx.rect(180, 180, 270, 150); //InnerBox
+
+                            //draw connecting lines
+                            for (let i = 0; i < 15; i++) {
+                                ctx.moveTo(positions[i][0], positions[i][1]); 
+                                ctx.lineTo(positions[i+1][0], positions[i+1][1]); 
+                                ctx.stroke();
+                                i++;
+                            }
+                        },
+
+
+                        move: function()
+                        {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            Board.drawBoard();
+                            Board.drawPositions(false);
+                             
+                            var animatePieceFrom = Board.placevalues[Board.animatePieceFromIndex];
+                            var animatePieceTo = Board.placevalues[Board.animatePieceToIndex];
+
+                          
+                            if(animatePieceFrom[0] > animatePieceTo[0])
+                                animatePieceFrom[0] = animatePieceFrom[0] - 5;
+
+                            if(animatePieceFrom[0] < animatePieceTo[0])
+                                  animatePieceFrom[0] = animatePieceFrom[0] + 5;
+
+                           if(animatePieceFrom[1] > animatePieceTo[1])
+                                animatePieceFrom[1] =  animatePieceFrom[1] - 5;
+
+                            if(animatePieceFrom[1] < animatePieceTo[1])
+                                 animatePieceFrom[1] = animatePieceFrom[1] + 5;
+
+
+                             if(animatePieceFrom[0] == animatePieceTo[0] &&
+                                 animatePieceFrom[1] == animatePieceTo[1] )
+                                 {
+                                    Board.placevalues[Board.animatePieceFromIndex] = JSON.parse(JSON.stringify(positions[Board.animatePieceFromIndex]));
+                                    Board.placevalues[Board.animatePieceToIndex][2] = 'played';
+                                    Board.animatePieceFromIndex = 99;
+                                    Board.animatePieceToIndex = 99;
+
+                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                    Board.drawBoard();
+                                    Board.drawPositions(false);
+
+                                    console.table(Board.placevalues);  // console debugging log
+
+                                    window.cancelAnimationFrame(Board.animationFrame);
+                                    return;
+                                 }
+                
+                            Board.animationFrame = window.requestAnimationFrame(Board.move);
+                        },
+
+                        drawPositions: function(withEventListeners)
+                        {
+                           
+                                  
+                            for (let i = 0; i < 16; i++) {
+                                const circle = new Path2D();
+                                circle.selected = false;
+                                circle.arc(this.placevalues[i][0],this.placevalues[i][1] , 25, 0, 2 * Math.PI);
+
+                               
+
+                                if(this.placevalues[i][2] == 'mouseover')
+                                    ctx.fillStyle =   'rgba(255, 0, 0, 0.5)' 
+                                
+                                if(this.placevalues[i][2] == 'played')
+                                    ctx.fillStyle =   'yellow' ;
+
+                                if(this.placevalues[i][2] == 'new')
+                                    ctx.fillStyle =   'rgba(0, 0, 0, 0)'; //make them transparent for a start
+                                                              
+                               
+                                ctx.fill(circle);
+
+                                if(withEventListeners)
+                                {
+                                    canvas.addEventListener('mousemove', function (event) 
+                                    {
+                                        if(Board.placevalues[i][2] ==  'played')
+                                            return;
+
+                                        if (ctx.isPointInPath(circle, event.offsetX, event.offsetY))
+                                            Board.placevalues[i][2] =  'mouseover';
+                                        else
+                                            Board.placevalues[i][2] =  'new';
+
+                                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                        Board.drawBoard();
+                                        Board.drawPositions(false);
+                                    });
+
+                                    canvas.addEventListener('mouseup', function (event) 
+                                    {
+                                        if (ctx.isPointInPath(circle, event.offsetX, event.offsetY))
+                                        {
+                                            
+                                           if(Board.placevalues[i][2] == 'mouseover' && Board.animatePieceFromIndex < 99 )
+                                           {                                                   
+                                                Board.animatePieceToIndex = i;                                              
+                                                Board.move();
+                                                return;
+                                           }
+
+                                           if(Board.placevalues[i][2] == 'played' )
+                                           {                                               
+                                                Board.animatePieceFromIndex = i;
+                                                return;
+                                           }
+
+                                          
+                                            Board.placevalues[i][2] =  'played'; 
+                                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                            Board.drawBoard();
+                                            Board.drawPositions(false);
+                                            console.table(Board.placevalues);  // console debugging log
+                                           
+                                        }
+                                    });
+                                }
+                            }
+                        }                        
+                    }
+
+                      //Obselete
+                    function drawBoardLiterally() 
+                    {
+                        ctx.beginPath();
+                        ctx.lineWidth = 10;
+                        ctx.lineJoin = "miter";
+
+                        ctx.rect(20, 20, 600, 450); //OuterBox
+                        ctx.rect(100, 100, 435, 300); //MiddleBox
+                        ctx.rect(180, 180, 270, 150); //InnerBox
+
+                        ctx.moveTo(20, 255); ctx.lineTo(180, 255); ctx.stroke(); //MiddleLeft join;
+                        ctx.moveTo(450, 255); ctx.lineTo(620, 255); ctx.stroke();//MiddleRight join
+                        ctx.moveTo(315, 20); ctx.lineTo(315, 180); ctx.stroke();//TopCenter join
+                        ctx.moveTo(315, 330); ctx.lineTo(315, 470); ctx.stroke();//BottomCenter join
+
+                        ctx.moveTo(20, 20); ctx.lineTo(180, 180); ctx.stroke();  //NorthWest join
+                        ctx.moveTo(20, 470); ctx.lineTo(180, 330); ctx.stroke(); //SouthWest join
+                        ctx.moveTo(620, 470); ctx.lineTo(450, 330); ctx.stroke(); //SouthEast join
+                        ctx.moveTo(620, 20); ctx.lineTo(450, 180); ctx.stroke();//NorthEast join
+
+                    }
+
+                    Board.initialize();
+                    
+
+                    //THINGS TO DO
+                    //Show only validate moves
+                    //Set Player's turn (networkbased)
+                    //Show Score board
+                    //Show Time elapse
+                    //Add styling
+                    //Create logins
+                    //Refactor/Clean the code
+                    //obfuscate the Javascipt
+
+
+      
+
+      
+    </script>
+
+</body>
+</html>
