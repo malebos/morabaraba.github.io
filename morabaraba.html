@@ -14,22 +14,33 @@
 
     <script>    
         let positions = [           
-                        [20, 255,'new'],  //MiddleLeft join;
-                        [180, 255,'new'], //MiddleLeft join
-                        [450, 255,'new'], //MiddleRight join
-                        [620, 255,'new'], //MiddleRight join
-                        [315, 20,'new'],  //TopCenter join
-                        [315, 180,'new'], //TopCenter join
-                        [315, 330,'new'], //BottomCenter join
-                        [315, 470,'new'], //BottomCenter join
-                        [20, 20,'new'],   //NorthWest join
-                        [180, 180,'new'], //NorthWest join
-                        [20, 470,'new'],  //SouthWest join
-                        [180, 330,'new'], //SouthWest join
-                        [620, 470,'new'], //SouthEast join
-                        [450, 330,'new'], //SouthEast join  
-                        [620,20,'new'],   //NorthEast join
-                        [450, 180,'new']  //NorthEast join
+                        [20, 255,'new',''],  //MiddleLeft join;
+                        [180, 255,'new',''], //MiddleLeft join
+                        [450, 255,'new',''], //MiddleRight join
+                        [620, 255,'new',''], //MiddleRight join
+                        [315, 20,'new',''],  //TopCenter join
+                        [315, 180,'new',''], //TopCenter join
+                        [315, 330,'new',''], //BottomCenter join
+                        [315, 470,'new',''], //BottomCenter join
+                        [20, 20,'new',''],   //NorthWest join
+                        [180, 180,'new',''], //NorthWest join
+                        [20, 470,'new',''],  //SouthWest join
+                        [180, 330,'new',''], //SouthWest join
+                        [620, 470,'new',''], //SouthEast join
+                        [450, 330,'new',''], //SouthEast join  
+                        [620,20,'new',''],   //NorthEast join
+                        [450, 180,'new',''],  //NorthEast join
+
+                        [100, 100,'new',''], //MiddleBox TopLeftJoin
+                        [100, 255,'new',''], //MiddleBox LeftJoin
+                        [100, 400,'new',''], //MiddleBox BottomLeftJoin
+                        [315, 400,'new',''], //MiddleBox BottomCenter
+                        [535, 400,'new',''], //MiddleBox BottomRight
+                        [535, 255,'new',''], //MiddleBox RightJoin
+                        [535, 100,'new',''], //MiddleBox TopRightJoin
+                        [315, 100,'new',''], //MiddleBox Top                       
+
+
                     ];
 
             
@@ -57,6 +68,8 @@
                         player2: 0
                         },
                         playerTurn: 1,
+                        canSlide: false,
+                        piecesPlacedOnBoard: 0,
                         initialize: function () {
                             this.drawBoard();
                             this.drawPositions(true);
@@ -110,8 +123,11 @@
                              if(animatePieceFrom[0] == animatePieceTo[0] &&
                                  animatePieceFrom[1] == animatePieceTo[1] )
                                  {
+                                    var player =  Board.placevalues[Board.animatePieceFromIndex] [3];
                                     Board.placevalues[Board.animatePieceFromIndex] = JSON.parse(JSON.stringify(positions[Board.animatePieceFromIndex]));
                                     Board.placevalues[Board.animatePieceToIndex][2] = 'played';
+                                    Board.placevalues[Board.animatePieceToIndex][3] = player;
+                                    Board.playerTurn =  Board.playerTurn == 1 ? 2 : 1;     
                                     Board.animatePieceFromIndex = 99;
                                     Board.animatePieceToIndex = 99;
 
@@ -132,18 +148,17 @@
                         {
                            
                                   
-                            for (let i = 0; i < 16; i++) {
+                            for (let i = 0; i < Board.placevalues.length; i++) {
                                 const circle = new Path2D();
                                 circle.selected = false;
-                                circle.arc(this.placevalues[i][0],this.placevalues[i][1] , 25, 0, 2 * Math.PI);
-
+                                circle.arc(Board.placevalues[i][0],Board.placevalues[i][1] , 25, 0, 2 * Math.PI);
                                
 
                                 if(this.placevalues[i][2] == 'mouseover')
                                     ctx.fillStyle =   'rgba(255, 0, 0, 0.5)' 
                                 
                                 if(this.placevalues[i][2] == 'played')
-                                    ctx.fillStyle =   'yellow' ;
+                                    ctx.fillStyle = Board.placevalues[i][3] == 1 ? 'yellow' : 'lime' ;
 
                                 if(this.placevalues[i][2] == 'new')
                                     ctx.fillStyle =   'rgba(0, 0, 0, 0)'; //make them transparent for a start
@@ -174,20 +189,41 @@
                                         {
                                             
                                            if(Board.placevalues[i][2] == 'mouseover' && Board.animatePieceFromIndex < 99 )
-                                           {                                                   
+                                           {   
                                                 Board.animatePieceToIndex = i;                                              
-                                                Board.move();
+                                                Board.move();   
                                                 return;
                                            }
 
                                            if(Board.placevalues[i][2] == 'played' )
-                                           {                                               
+                                           {     
+                                               if(Board.canSlide)                                          
                                                 Board.animatePieceFromIndex = i;
+
+                                           
+                                               if(Board.playerTurn != Board.placevalues[i][3])
+                                               {
+                                                    Board.animatePieceFromIndex = 99;
+                                                    var p = Board.playerTurn == 1 ? 'yellow' : 'lime';
+                                                    alert('It is turn for ' + p + ' to play!');
+                                               }
+
                                                 return;
                                            }
 
-                                          
-                                            Board.placevalues[i][2] =  'played'; 
+                                           if( Board.canSlide)
+                                                return;
+
+                                            Board.placevalues[i][3] = Board.playerTurn;
+                                            Board.placevalues[i][2] =  'played';                                           
+                                            Board.playerTurn =  Board.playerTurn == 1 ? 2 : 1;
+                                            Board.piecesPlacedOnBoard += 1;
+                                            
+                                            if(Board.piecesPlacedOnBoard > 20)
+                                                alert('How did we get here ?');
+
+                                            Board.canSlide = Board.piecesPlacedOnBoard == 20;
+
                                             ctx.clearRect(0, 0, canvas.width, canvas.height);
                                             Board.drawBoard();
                                             Board.drawPositions(false);
